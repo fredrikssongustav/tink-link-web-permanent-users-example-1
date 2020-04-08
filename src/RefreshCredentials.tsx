@@ -6,19 +6,23 @@ import {
   generateAuthorizationCode,
   Credentials,
   refreshCredentialsLink,
-  authenticateCredentialsLink
-} from "./api";
+  authenticateCredentialsLink,
+  payLink,
+  getTransfers,
+} from './api';
 import { Header } from "./Header";
 import { CheckIcon } from "./images/CheckIcon";
 import { PrettyCode } from "./PrettyCode";
 
 type RefreshCredentialsProps = {
   userId: string;
+  paymentRequestId?:string;
 };
 
 export const RefreshCredentials: React.FC<RefreshCredentialsProps> = ({
-  userId
+  userId, paymentRequestId
 }) => {
+  const [tranfers, setTransfers] = useState<any>(undefined)
   const [credentials, setCredentials] = useState<Credentials[] | undefined>(
     undefined
   );
@@ -38,10 +42,17 @@ export const RefreshCredentials: React.FC<RefreshCredentialsProps> = ({
       setAuthorizationCode(authorizationCode);
     };
 
+    const getT = async (paymentRequestId: string) => {
+      const transfersResponse = await getTransfers(paymentRequestId);
+      setTransfers(transfersResponse.paymentRequestCreatedTransfers);
+    };
+
     getAuthorizationCode(userId);
 
     getCredentials(userId);
-  }, [userId]);
+
+    paymentRequestId && getT(paymentRequestId)
+  }, [paymentRequestId, userId]);
 
   return (
     <>
@@ -60,6 +71,10 @@ export const RefreshCredentials: React.FC<RefreshCredentialsProps> = ({
                 Credentials were successfully added to user!
               </div>
               {!credentials && <div>Fetching credentials ...</div>}
+              {tranfers && <PrettyCode
+                code={JSON.stringify(tranfers, null, 2)}
+                className="mt-20 ws-pl"
+              />}
               {credentials &&
                 credentials.map(credential => (
                   <div key={credential.id}>
@@ -91,6 +106,16 @@ export const RefreshCredentials: React.FC<RefreshCredentialsProps> = ({
                             Authenticate PSD2 credentials
                           </a>
                         )}
+                        <a
+                          className={"button mt-24 ml-16"}
+                          href={payLink(
+                            authorizationCode.code,
+                            userId,
+                            credential.id,
+                          )}
+                        >
+                          Pay stuff
+                        </a>
                       </>
                     )}
                   </div>

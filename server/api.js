@@ -5,8 +5,8 @@ const CLIENT_SECRET =
   process.env.REACT_APP_TINK_LINK_PERMANENT_USERS_CLIENT_SECRET;
 const MARKET = process.env.REACT_APP_TINK_LINK_PERMANENT_USERS_MARKET;
 
-const DELEGATED_TINK_LINK_CLIENT_ID = "df05e4b379934cd09963197cc855bfe9";
-const API_URL = "https://api.tink.com";
+const DELEGATED_TINK_LINK_CLIENT_ID = "1a3f40ecec3f4abc923edfb2295c16bc";
+const API_URL = "https://api-gateway.preprod.oxford.tink.se";
 
 const log = function(...args) {
   args.forEach(arg => {
@@ -16,7 +16,7 @@ const log = function(...args) {
 };
 
 const fetchClientAccessToken = async () => {
-  const scopes = "authorization:grant,user:read,user:create,credentials:read";
+  const scopes = "authorization:grant,user:read,user:create,credentials:read,payment:read,accounts:read,transfer:read,transfer:execute,link-session:read";
   const clientAccessTokenResponse = await fetch(
     `${API_URL}/api/v1/oauth/token`,
     {
@@ -52,7 +52,7 @@ const createPermanentUser = async clientAccessToken => {
 
 const fetchAuthorizationCode = async (userId, clientAccessToken) => {
   const scopes =
-    "credentials:read,credentials:refresh,credentials:write,providers:read,user:read,authorization:read";
+    "credentials:read,credentials:refresh,credentials:write,providers:read,user:read,authorization:read,transfer:read,transfer:execute,link-session:read";
   const idHint = "John Doe";
 
   const authorizationDelegateResponse = await fetch(
@@ -125,11 +125,29 @@ const getUserCredentials = async userAccessToken => {
   return userCredentials;
 };
 
+const getTransfers = async (accessToken,paymentRequestId) => {
+  const transfersResponse = await fetch(
+    `${API_URL}/api/v1/payments/requests/${paymentRequestId}/transfers`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+  const transfers = await transfersResponse.json();
+  log("User credentials", transfers);
+
+  return transfers;
+};
+
 module.exports = {
   fetchClientAccessToken,
   createPermanentUser,
   fetchAuthorizationCode,
   getUserGrantAuthorizationCode,
   fetchUserAccessToken,
-  getUserCredentials
+  getUserCredentials,
+  getTransfers,
 };
